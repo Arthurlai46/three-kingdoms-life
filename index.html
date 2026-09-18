@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>三國文字人生 v0.1.1 Alpha</title>
+<title>三國文字人生 v0.1.2 Alpha</title>
 <style>
 :root{--bg:#efe3c4;--panel:#fff8e8;--ink:#30271c;--muted:#756a58;--line:#b79b68;--accent:#7b2d26;--btn:#f4e6c5;--good:#2f6b45;--bad:#8c2e2e}
 [data-theme="dark"]{--bg:#171716;--panel:#23221f;--ink:#eee3cc;--muted:#aaa18e;--line:#665b47;--accent:#c8846d;--btn:#302e29;--good:#82c99b;--bad:#df8b83}
@@ -28,7 +28,7 @@ button,input,select,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-
    <button onclick="observerStart()">觀察者模式</button>
    <button onclick="showChangelog()">更新紀錄</button>
   </div>
-  <p class="small">v0.1.1 Alpha：核心循環、30城、80名人物資料池、關係/情報底層、事件、旅行、修練、基礎仕官/戰鬥、存檔與備份碼。</p>
+  <p class="small">v0.1.2 Alpha：任務閉環、動態情報、個人化修練、官府案件限量、健康療養、旅行天數、人物互動與市場交易。</p>
   <div id="compat" class="small" style="margin-top:12px;padding:9px;border:1px dashed var(--line);border-radius:8px">正在檢查瀏覽器相容性…</div>
  </div>
 </section>
@@ -48,7 +48,7 @@ button,input,select,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="box" id="modalBox"></div></div>
 
 <script>
-const VERSION="0.1.1", SAVE_VERSION=1;
+const VERSION="0.1.2", SAVE_VERSION=2;
 const CITIES=[
 ["洛陽","司隸"],["長安","司隸"],["陳留","兗州"],["濮陽","兗州"],["許昌","豫州"],["汝南","豫州"],["譙","豫州"],["鄴","冀州"],["南皮","冀州"],["平原","青州"],["北海","青州"],["薊","幽州"],["遼東","幽州"],["晉陽","并州"],["上黨","并州"],["宛","荊州"],["襄陽","荊州"],["江陵","荊州"],["長沙","荊州"],["壽春","揚州"],["建業","揚州"],["吳","揚州"],["會稽","揚州"],["柴桑","揚州"],["成都","益州"],["漢中","益州"],["梓潼","益州"],["江州","益州"],["武威","涼州"],["天水","涼州"]
 ].map((x,i)=>({id:i,name:x[0],region:x[1],prosperity:55+((i*7)%31),order:50+((i*11)%36),food:60+((i*13)%35),price:90+((i*17)%35)}));
@@ -170,6 +170,139 @@ function bootCheck(){
  el.innerHTML=msg;
 }
 window.addEventListener("DOMContentLoaded",bootCheck);
+
+
+/* ===== v0.1.2 gameplay patch ===== */
+const ROADS=[[0,1,5],[0,2,3],[0,4,3],[0,15,5],[1,29,6],[1,25,7],[2,3,2],[2,4,2],[2,7,5],[3,7,4],[4,5,2],[4,6,2],[4,15,4],[5,19,5],[7,8,3],[7,14,5],[8,9,3],[9,10,2],[8,11,6],[11,12,7],[11,13,6],[13,14,3],[14,29,7],[15,16,3],[16,17,3],[16,19,5],[17,18,4],[17,23,5],[18,23,5],[19,20,4],[20,21,2],[21,22,3],[20,23,4],[23,27,8],[25,26,4],[25,29,5],[25,24,7],[24,26,3],[24,27,4],[28,29,5]];
+const HOME={"劉備":11,"關羽":11,"張飛":11,"曹操":0,"袁紹":0,"袁術":0,"孫堅":18,"董卓":28,"呂布":13,"丁原":13,"何進":0,"皇甫嵩":0,"朱儁":0,"盧植":0,"公孫瓚":11,"陶謙":10,"劉表":16,"劉焉":24,"馬騰":28,"韓遂":28,"張角":7,"張寶":7,"張梁":7,"荀彧":4,"郭嘉":4,"趙雲":7,"孔融":10,"王允":0,"蔡邕":0,"華佗":5,"張仲景":16};
+const GOODS=["糧食","藥材","布匹","鐵器"];
+const RUMORS=["黃巾軍在附近郡縣活動，但各方所報兵力不一。","北來商旅說道路不靖，部分商隊開始改道。","地方官府近日加強盤查，似乎正在防備變亂。","有遊俠談到附近豪傑正在招募鄉勇。","商旅認為近期糧價可能因戰事而波動。","有人看見一支來歷不明的隊伍在城外活動。"];
+
+function ensureV12(){
+ if(!state)return;
+ state.saveVersion=2;state.version=VERSION;
+ state.intel=state.intel||[];state.intelUsage=state.intelUsage||{};
+ state.inventory=state.inventory||{旅糧:0,糧食:0,藥材:0,布匹:0,鐵器:0};
+ ["旅糧",...GOODS].forEach(k=>state.inventory[k]=state.inventory[k]||0);
+ state.world=state.world||CITIES.map(()=>({price:{糧食:70+rng(61),藥材:80+rng(71),布匹:70+rng(61),鐵器:90+rng(61)},govMax:1+rng(10),govDone:0,bandits:1+rng(4)}));
+ state.people.forEach((p,i)=>{if(HOME[p.name]!==undefined&&state.turn===0)p.city=HOME[p.name];if(p.lastTalk===undefined)p.lastTalk=-99});
+}
+const oldFreshState=freshState;
+freshState=function(p){let s=oldFreshState(p);state=s;ensureV12();let out=state;state=null;return out}
+const oldEnterGame=enterGame;
+enterGame=function(){ensureV12();oldEnterGame()}
+
+function renderCity(){
+ ensureV12();let c=CITIES[state.city],g=state.world[state.city];
+ scene(c.name,`${c.region}｜治安 ${c.order}｜繁榮 ${c.prosperity}`,`你身在${c.name}。本月官府案件已處理 ${g.govDone}/${g.govMax}；城外匪患：${g.bandits?"仍有活動":"暫平"}。`,[
+ ["前往酒肆",tavern],["前往市集",market],["修練",train],["打聽消息",intelMenu],["拜訪人物",visitPeople],["官府／仕官",government],["地圖／旅行",showMap],["休養／醫療",healMenu]
+ ]);
+}
+function tavern(){
+ advance(1);let pool=state.people.filter(p=>p.alive&&p.city===state.city),p=pool.length?pool[rng(pool.length)]:null;
+ if(p)p.known=Math.max(p.known,1);
+ scene("酒肆","消息、人脈與委託的交會處",p?`你注意到${p.known>1?p.name:"一名陌生人物"}。對方也察覺了你的目光。`:"今日沒有特別引人注目的人。",[
+ ["主動攀談",()=>p?meet(p):noteBack("今日無人可談。")],["打聽消息",intelMenu],["花錢買可靠消息",()=>paidIntel(100,"較高")],["尋找委託",generateTask],["返回",renderCity]
+ ]);
+}
+function meet(p){
+ p.known=2;let cool=state.turn-p.lastTalk<3;p.lastTalk=state.turn;
+ let tone=p.name==="張飛"?"此人聲若洪鐘，說話直來直往。":p.name==="曹操"?"此人言語不多，卻不時反問你的看法。":p.name==="關羽"?"此人神色沉穩，言談頗重信義。":"對方停下手邊之事，與你交談。";
+ scene("主動攀談",p.zi?`${p.name}・字${p.zi}`:p.name,`${tone}${cool?"\n你近日已多次攀談，對方顯得有些意興闌珊。":""}`,[
+ ["自我介紹",()=>talkResult(p,"affection",cool?0:2,"你們交換姓名與來歷。")],
+ ["談論天下",()=>talkResult(p,"respect",cool?0:(state.player.stats.int>=65?3:1),"你談起時局，對方也給出自己的看法。")],
+ ["請他喝酒（30錢）",()=>{if(pay(30))talkResult(p,"affection",cool?1:4,"酒過數巡，氣氛稍微熱絡。")}],
+ ["打聽附近消息",intelMenu],["詢問武藝",()=>talkResult(p,"respect",cool?0:(state.player.stats.war>=65?3:1),"你們談起武藝與臨敵之道。")],["告辭",renderCity]
+ ]);
+}
+function talkResult(p,k,n,txt){p.relation[k]+=n;advance(1);scene("交談結果",p.name,`${txt}\n${n?"你感覺彼此關係有所變化。":"短期內重複同類互動，沒有帶來新的進展。"}`,[["繼續交談",()=>meet(p)],["返回城中",renderCity]])}
+
+function intelKey(){return `${state.date.y}-${state.date.m}-${state.city}-${Math.floor(state.fame/10)}-${state.rank}`}
+function intelMenu(){
+ ensureV12();let k=intelKey(),u=state.intelUsage[k]||0;
+ scene("打聽消息",`本地免費情報探索 ${Math.min(u,4)}/4`,`免費打聽依靠時間、身份、名聲與人脈。${u>=4?"以你目前條件，能接觸的新消息已大致枯竭。":"目前仍可能找到新的傳聞。"}\n花錢可以換取較快、來源較可靠的消息，但不等於絕對真實。`,[
+ ["免費打聽（1日）",freeIntel],["請酒套話（30錢）",()=>paidIntel(30,"普通")],["購買消息（100錢）",()=>paidIntel(100,"較高")],["可靠耳目（300錢）",()=>paidIntel(300,"高")],["情報紀錄",showIntel],["返回",renderCity]
+ ]);
+}
+function freeIntel(){
+ let k=intelKey(),u=state.intelUsage[k]||0;
+ if(u>=4)return scene("情報枯竭","目前條件下已無新消息","近日坊間所談大抵如此。提升名聲、改變身份、完成工作或剿匪、前往別城後再來，才較可能有新消息。",[["返回",intelMenu]]);
+ state.intelUsage[k]=u+1;advance(1);recordIntel(RUMORS[(u+state.city+state.date.m)%RUMORS.length],"市井傳聞","不明");showLastIntel();
+}
+function paidIntel(cost,cred){
+ if(!pay(cost))return;advance(1);let w=state.world[state.city],msgs=[`官府本月尚有 ${Math.max(0,w.govMax-w.govDone)} 件差事可能承接。`,`城外目前約有 ${w.bandits} 股匪患活動跡象。`,`本城糧食行情約為 ${w.price.糧食} 錢。`,`有商旅稱近期${CITIES[state.city].region}道路情勢正在變化。`];
+ recordIntel(msgs[rng(msgs.length)],cost>=300?"可靠耳目":cost>=100?"消息販子":"酒客",cred);showLastIntel();
+}
+function recordIntel(text,source,cred){state.intel.push({date:dateText(),city:state.city,text,source,cred});if(state.intel.length>80)state.intel.shift()}
+function showLastIntel(){let x=state.intel[state.intel.length-1];scene("取得情報",`來源：${x.source}｜可信度：${x.cred}`,x.text,[["繼續打聽",intelMenu],["返回",renderCity]])}
+function showIntel(){ensureV12();modal(`<div class="title">情報紀錄</div>${state.intel.slice().reverse().map(x=>`<div class="msg"><b>${x.date}・${CITIES[x.city].name}</b><br>${x.text}<br><span class="small">來源：${x.source}｜可信度：${x.cred}</span></div>`).join("")||"尚無情報紀錄。"}<div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+
+function trainingDays(k){let s=state.player.stats[k],pot=state.player.potential[k]||85,gap=Math.max(1,pot-s),base=4+Math.floor(s/12)+Math.floor(Math.max(0,s-70)/4);return Math.max(3,Math.min(60,base+Math.floor(18/gap)))}
+function train(){scene("修練","各能力依目前數值與隱藏潛力決定時間","每一項提升下一點所需時間不同；越接近自身瓶頸越慢。",["lead","war","int","pol","cha"].map(k=>[`${label(k)} ${state.player.stats[k]} → +1｜${trainingDays(k)}日`,()=>grow(k)]).concat([["取消",renderCity]]))}
+function grow(k){let d=trainingDays(k),s=state.player.stats[k],pot=state.player.potential[k]||85;if(s>=100)return noteBack("正常修練已無法突破100。");advance(d);if(s<pot){state.player.stats[k]++;note(`${label(k)}提升至 ${state.player.stats[k]}。`)}else note(`${label(k)}已逼近自身瓶頸，這次未能突破。`);renderCity()}
+
+function government(){
+ ensureV12();let g=state.world[state.city],left=Math.max(0,g.govMax-g.govDone);
+ scene("官府",`本月案件：${g.govDone}/${g.govMax} 已處理｜剩餘 ${left}`,state.faction?`目前身分：${state.rank}。官府案件並非無限產生。`:"你尚未正式仕官，但仍可承接部分地方差事。",[
+ ["地方差役",()=>govPreview(false)],["剿匪差事",()=>govPreview(true)],["詢問政務（1日）",()=>{advance(1);noteBack("你對本地治安與民情多了一些了解。")}],["返回",renderCity]
+ ]);
+}
+function govPreview(b){
+ let g=state.world[state.city];if(g.govDone>=g.govMax)return noteBack("本月官府暫無新的差事。");if(b&&g.bandits<=0)return noteBack("附近匪患暫平，目前沒有剿匪差事。");
+ let risk=b?(state.player.stats.war+state.player.stats.lead<125?"偏高":"普通"):"低";
+ scene(b?"剿匪差事":"地方差役",`風險：${risk}`,`預計耗時：${b?"5日":"2～3日"}\n可能影響：金錢 ↑｜名聲 ↑｜體力 ↓${b?"｜健康 ↓（受傷風險）":""}`,[[ "接受",()=>b?banditBattle():localJob()],["暫不接受",government]]);
+}
+function localJob(){let g=state.world[state.city];g.govDone++;if(!state.faction){state.faction="地方官府";state.rank="佐吏"}advance(2+rng(2));state.money+=35;state.fame+=1;state.stamina=Math.max(20,state.stamina-8);relaxIntel();noteBack("差事完成，獲35錢，名聲略升。")}
+function banditBattle(){let g=state.world[state.city];if(g.govDone>=g.govMax||g.bandits<=0)return government();g.govDone++;let power=state.player.stats.war+state.player.stats.lead+rng(40),enemy=115+rng(45);advance(5);state.stamina=Math.max(10,state.stamina-20);if(power>=enemy){g.bandits=Math.max(0,g.bandits-1);state.fame+=5;state.money+=100;note("剿匪成功，獲100錢與名聲。")}else{state.health=Math.max(1,state.health-10-rng(16));note("剿匪失利，你在混戰中受傷。")}relaxIntel();renderCity()}
+function relaxIntel(){Object.keys(state.intelUsage).filter(k=>k.includes(`-${state.city}-`)).forEach(k=>state.intelUsage[k]=Math.max(0,state.intelUsage[k]-1))}
+
+function generateTask(){
+ let active=state.tasks.filter(t=>t.status==="active"&&t.from===state.city);if(active.length>=2)return noteBack("本地目前沒有新的合適委託。");
+ let to=nearestDifferent(state.city),types=[["護送商旅",150],["送交書信",90],["護送藥材",130]],x=types[rng(types.length)];
+ let t={id:Date.now(),title:x[0],from:state.city,to,client:`${CITIES[state.city].name}商人`,due:serialDate()+14,reward:x[1],status:"active",arrived:false};state.tasks.push(t);
+ scene("接到委託",`委託人：${t.client}`,`任務：${t.title}\n目的地：${CITIES[to].name}\n期限：約14日\n報酬：${t.reward}錢\n完成方式：抵達目的地後，再回到${CITIES[t.from].name}酒肆向委託人回報。`,[["接受並記下",renderCity],["查看任務",showTasks]]);
+}
+function showTasks(){ensureV12();modal(`<div class="title">任務／待辦</div>${state.tasks.filter(t=>t.status!=="done").map(t=>t.from===undefined?`<div class="msg"><b>${t.title}</b>｜舊版委託，建議完成後改接新版任務</div>`:`<div class="msg"><b>${t.title}</b><br>委託人：${t.client}<br>目的地：${CITIES[t.to].name}｜回報：${CITIES[t.from].name}酒肆<br>報酬：${t.reward}錢｜狀態：${t.arrived?"已達成目標，等待回報":"進行中"}${t.arrived&&state.city===t.from?`<br><button onclick="turnIn(${t.id})">向委託人回報</button>`:""}</div>`).join("")||"目前沒有未完成任務。"}<div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+function turnIn(id){let t=state.tasks.find(x=>x.id===id);if(!t||!t.arrived||state.city!==t.from)return;t.status="done";state.money+=t.reward;state.fame+=2;addJournal(`完成委託「${t.title}」，獲得${t.reward}錢。`);relaxIntel();showTasks()}
+
+function market(){
+ ensureV12();let p=state.world[state.city].price;
+ scene("市集",`你有 ${state.money} 錢`,`本地行情：\n糧食 ${trend(p.糧食)} ${p.糧食}｜藥材 ${trend(p.藥材)} ${p.藥材}\n布匹 ${trend(p.布匹)} ${p.布匹}｜鐵器 ${trend(p.鐵器)} ${p.鐵器}\n旅糧：30錢／份（旅行時消耗）`,[
+ ["做短工（+40錢／2日）",()=>{state.money+=40;advance(2);relaxIntel();noteBack("你做了兩日短工，獲得40錢。")}],
+ ["購買旅糧（30錢）",()=>{if(pay(30)){state.inventory.旅糧++;noteBack("你購買1份旅糧。")}}],
+ ["交易商品",tradeMenu],["觀察物價（1日）",()=>{advance(1);scene("物價觀察","本地即時行情",`糧食：${trend(p.糧食)} ${p.糧食}\n藥材：${trend(p.藥材)} ${p.藥材}\n布匹：${trend(p.布匹)} ${p.布匹}\n鐵器：${trend(p.鐵器)} ${p.鐵器}\n價格會隨月份與局勢改變。`,[["返回市集",market]])}],["返回",renderCity]
+ ]);
+}
+function trend(v){return v<85?"偏低 ↓":v>125?"昂貴 ↑↑":v>110?"偏高 ↑":"普通 →"}
+function tradeMenu(){let p=state.world[state.city].price;modal(`<div class="title">市場交易</div>${GOODS.map(k=>`<div class="msg"><b>${k}</b>　價格 ${p[k]}　持有 ${state.inventory[k]||0}　<button onclick="buyGood('${k}')">買1</button> <button onclick="sellGood('${k}')">賣1</button></div>`).join("")}<div class="toolbar"><button onclick="closeModal();market()">返回</button></div>`)}
+function buyGood(k){let p=state.world[state.city].price[k];if(pay(p)){state.inventory[k]=(state.inventory[k]||0)+1;tradeMenu()}}
+function sellGood(k){if(!(state.inventory[k]>0))return alert("沒有此商品");state.inventory[k]--;state.money+=Math.floor(state.world[state.city].price[k]*.9);tradeMenu()}
+
+function healMenu(){
+ let miss=100-state.health;if(miss<=0)return scene("休養／醫療","健康100","目前沒有需要治療的傷勢。",[["休息三日（恢復體力）",()=>{advance(3);state.stamina=Math.min(100,state.stamina+30);renderCity()}],["返回",renderCity]]);
+ let self=Math.ceil(miss/2),doc=Math.max(2,Math.ceil(miss/7)),famous=Math.max(1,Math.ceil(miss/15));
+ scene("休養／醫療",`目前健康 ${state.health}/100`,`沒錢就用時間；省時間就用錢。\n自行休養：約${self}日／0錢\n城中郎中：約${doc}日／${Math.max(50,miss*4)}錢\n名醫：約${famous}日／${Math.max(200,miss*12)}錢（必須人在本城且能找到）`,[
+ ["自行休養",()=>heal(self,0)],["找城中郎中",()=>heal(doc,Math.max(50,miss*4))],["尋訪名醫",()=>famousHeal(famous,Math.max(200,miss*12))],["返回",renderCity]
+ ]);
+}
+function heal(days,cost){if(cost&&!pay(cost))return;advance(days);state.health=100;state.stamina=Math.min(100,state.stamina+40);noteBack(`療養${days}日後，健康恢復至100。`)}
+function famousHeal(days,cost){let p=state.people.find(p=>p.alive&&p.city===state.city&&(p.name==="華佗"||p.name==="張仲景"));if(!p)return noteBack("本城目前沒有你能找到的名醫。");if(!pay(cost))return;advance(days);state.health=100;noteBack(`${p.name}為你診治，${days}日後已大致康復。`)}
+
+function nearestDifferent(id){let a=ROADS.filter(r=>r[0]===id||r[1]===id);if(a.length){let r=a[rng(a.length)];return r[0]===id?r[1]:r[0]}return(id+1)%30}
+function shortest(from,to){let d=Array(30).fill(Infinity),used=new Set;d[from]=0;for(let n=0;n<30;n++){let u=-1,b=Infinity;for(let i=0;i<30;i++)if(!used.has(i)&&d[i]<b){b=d[i];u=i}if(u<0)break;used.add(u);ROADS.forEach(([a,c,w])=>{if(a===u&&d[c]>d[u]+w)d[c]=d[u]+w;if(c===u&&d[a]>d[u]+w)d[a]=d[u]+w})}return isFinite(d[to])?d[to]:12}
+function showMap(){ensureV12();modal(`<div class="title">天下地圖／旅行</div><p>目前：${CITIES[state.city].region}・${CITIES[state.city].name}｜旅糧 ${state.inventory.旅糧}</p><p class="small">目的地按鈕直接顯示預計天數。旅糧不足仍可出發，但健康與體力風險提高。</p><div class="actions">${CITIES.filter(x=>x.id!==state.city).map(x=>`<button onclick="travelConfirm(${x.id})">${x.region}・${x.name}｜${shortest(state.city,x.id)}日</button>`).join("")}</div><div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+function travelConfirm(id){let d=shortest(state.city,id),lack=Math.max(0,d-state.inventory.旅糧);modal(`<div class="title">準備旅行</div><p><b>${CITIES[state.city].name} → ${CITIES[id].name}</b></p><p>預計耗時：${d}日<br>建議旅糧：${d}份｜目前：${state.inventory.旅糧}份<br>體力：↓　途中事件：可能發生${lack?`<br><span class="danger">旅糧不足 ${lack}份：健康與體力風險提高。</span>`:""}</p><div class="toolbar"><button class="primary" onclick="travelV12(${id},${d})">啟程</button><button onclick="showMap()">取消</button></div>`)}
+function travelV12(id,d){let use=Math.min(d,state.inventory.旅糧);state.inventory.旅糧-=use;let lack=d-use;advance(d);state.city=id;state.player.city=id;state.stamina=Math.max(5,state.stamina-d*2-lack*2);if(lack)state.health=Math.max(1,state.health-lack*2);state.tasks.forEach(t=>{if(t.status==="active"&&t.to===id)t.arrived=true});closeModal();note(`抵達${CITIES[id].name}，旅程耗時${d}日。`);renderCity()}
+
+function visitPeople(){let local=state.people.filter(p=>p.alive&&p.city===state.city&&p.known>0);modal(`<div class="title">拜訪人物｜${CITIES[state.city].name}</div><p class="small">只顯示你已知且目前在本城的人物。知道行蹤，不代表一定能見到。</p>${local.map(p=>`<div class="msg"><b>${p.known>1?p.name:"身分尚未完全確認"}${p.zi&&p.known>1?"・字"+p.zi:""}</b><br>好感 ${p.relation.affection}／信任 ${p.relation.trust}／敬佩 ${p.relation.respect}<br><button onclick="requestVisit('${p.id}')">遞帖求見</button></div>`).join("")||"你目前不知道本城有哪些值得拜訪的人。可先到酒肆、打聽消息或累積名聲。"}<div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+function requestVisit(id){let p=state.people.find(x=>x.id===id),score=state.fame+p.relation.affection+p.relation.trust;if(score<5&&Math.random()<.55){advance(1);modal(`<div class="title">求見未果</div><p>門人婉拒了你的拜帖。提高名聲、建立關係或取得引薦後會更容易見面。</p><div class="toolbar"><button onclick="closeModal();renderCity()">返回</button></div>`);return}closeModal();advance(1);meet(p)}
+
+const oldMonthlyWorld=monthlyWorld;
+monthlyWorld=function(){oldMonthlyWorld();ensureV12();state.world.forEach(w=>{GOODS.forEach(k=>w.price[k]=Math.max(50,Math.min(190,w.price[k]-10+rng(21))));w.govMax=1+rng(10);w.govDone=0;if(Math.random()<.35)w.bandits=Math.min(5,w.bandits+1)})}
+migrate=function(s){state=s;ensureV12();let out=state;state=null;return out}
+const oldRefreshSide=refreshSide;
+refreshSide=function(){ensureV12();oldRefreshSide();if(state&&document.getElementById("playerStats"))document.getElementById("playerStats").innerHTML+=`<div class="stat"><span>旅糧</span><b>${state.inventory.旅糧}</b></div>`}
+showChangelog=function(){modal(`<div class="title">更新紀錄</div><b>v0.1.2 Alpha</b><p>實裝任務交付閉環、情報枯竭與付費情報、五維個人化修練、每城每月1～10件官府案件與風險提示、健康療養、道路旅行天數、旅糧消耗、人物拜訪/酒肆互動冷卻，以及市場物價與商品買賣。</p><p class="small">v0.1.1 存檔讀取時會自動補上新資料。</p><div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
 
 </script>
 </body></html>

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>三國文字人生 v0.1.1 Alpha</title>
+<style>
+:root{--bg:#efe3c4;--panel:#fff8e8;--ink:#30271c;--muted:#756a58;--line:#b79b68;--accent:#7b2d26;--btn:#f4e6c5;--good:#2f6b45;--bad:#8c2e2e}
+[data-theme="dark"]{--bg:#171716;--panel:#23221f;--ink:#eee3cc;--muted:#aaa18e;--line:#665b47;--accent:#c8846d;--btn:#302e29;--good:#82c99b;--bad:#df8b83}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Serif TC","PingFang TC","Microsoft JhengHei",serif;line-height:1.55}
+button,input,select,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-height:100vh}.top{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center}.brand{font-weight:800}.small{font-size:.88rem;color:var(--muted)}
+.grid{display:grid;grid-template-columns:230px 1fr 250px;gap:12px;padding:12px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;box-shadow:0 2px 7px #0001}.story{min-height:420px}.title{font-size:1.25rem;font-weight:800;color:var(--accent);margin-bottom:8px}.narrative{white-space:pre-line;margin:10px 0 16px}
+.actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.actions button,.nav button,.primary,.secondary{border:1px solid var(--line);background:var(--btn);color:var(--ink);padding:11px 10px;border-radius:8px;cursor:pointer}.actions button:hover,.nav button:hover{filter:brightness(.97)}.primary{background:var(--accent);color:white;border-color:var(--accent)}.nav{display:grid;gap:7px}.stat{display:flex;justify-content:space-between;border-bottom:1px dotted var(--line);padding:4px 0}.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin:2px;font-size:.8rem}.msg{padding:7px 0;border-bottom:1px dotted var(--line);font-size:.9rem}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;z-index:20;padding:16px}.modal.show{display:flex}.box{width:min(760px,100%);max-height:88vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.formgrid label{display:grid;gap:4px}.full{grid-column:1/-1}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.screen{display:none}.screen.active{display:block}.home{max-width:760px;margin:8vh auto;padding:18px}.hero{text-align:center;padding:24px}.hero h1{font-size:2rem;margin:.2em}.homeBtns{display:grid;gap:10px;max-width:430px;margin:20px auto}.homeBtns button{padding:13px}.log{max-height:280px;overflow:auto}.danger{color:var(--bad)}.good{color:var(--good)}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.left,.right{display:none}.story{min-height:0}.actions{grid-template-columns:1fr 1fr}.top{position:static}}
+@media(max-width:480px){.actions{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="app">
+<section id="home" class="screen active home">
+ <div class="panel hero">
+  <div class="small">單機 Alpha ・ 存檔格式 1</div><h1>三國文字人生</h1>
+  <p>中平元年，黃巾四起。你不是歷史的旁觀者，而是活在其中的一個人。</p>
+  <div class="homeBtns">
+   <button class="primary" onclick="openCreate()">開始新人生</button>
+   <button onclick="continueGame()">繼續遊戲</button>
+   <button onclick="openSaves()">存檔管理／備份碼</button>
+   <button onclick="observerStart()">觀察者模式</button>
+   <button onclick="showChangelog()">更新紀錄</button>
+  </div>
+  <p class="small">v0.1.1 Alpha：核心循環、30城、80名人物資料池、關係/情報底層、事件、旅行、修練、基礎仕官/戰鬥、存檔與備份碼。</p>
+  <div id="compat" class="small" style="margin-top:12px;padding:9px;border:1px dashed var(--line);border-radius:8px">正在檢查瀏覽器相容性…</div>
+ </div>
+</section>
+
+<section id="game" class="screen">
+ <div class="top"><div><span class="brand">三國文字人生</span> <span id="dateTop" class="small"></span></div><div><button onclick="toggleTheme()">◐</button> <button onclick="quickSave()">儲存</button> <button onclick="goHome()">首頁</button></div></div>
+ <div class="grid">
+  <aside class="panel left"><div class="title">人物</div><div id="playerStats"></div><hr><div class="title">能力</div><div id="abilities"></div></aside>
+  <main class="panel story"><div id="sceneTitle" class="title"></div><div id="sceneMeta" class="small"></div><div id="narrative" class="narrative"></div><div id="actions" class="actions"></div></main>
+  <aside class="panel right"><div class="title">功能</div><div class="nav">
+   <button onclick="showPeople()">人物</button><button onclick="showMap()">地圖／旅行</button><button onclick="showIntel()">情報</button><button onclick="showTasks()">任務</button><button onclick="showJournal()">日誌</button><button onclick="showFaction()">勢力</button><button onclick="openSaves()">存檔</button>
+  </div><hr><div class="title">消息</div><div id="messages" class="log"></div></aside>
+ </div>
+</section>
+</div>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="box" id="modalBox"></div></div>
+
+<script>
+const VERSION="0.1.1", SAVE_VERSION=1;
+const CITIES=[
+["洛陽","司隸"],["長安","司隸"],["陳留","兗州"],["濮陽","兗州"],["許昌","豫州"],["汝南","豫州"],["譙","豫州"],["鄴","冀州"],["南皮","冀州"],["平原","青州"],["北海","青州"],["薊","幽州"],["遼東","幽州"],["晉陽","并州"],["上黨","并州"],["宛","荊州"],["襄陽","荊州"],["江陵","荊州"],["長沙","荊州"],["壽春","揚州"],["建業","揚州"],["吳","揚州"],["會稽","揚州"],["柴桑","揚州"],["成都","益州"],["漢中","益州"],["梓潼","益州"],["江州","益州"],["武威","涼州"],["天水","涼州"]
+].map((x,i)=>({id:i,name:x[0],region:x[1],prosperity:55+((i*7)%31),order:50+((i*11)%36),food:60+((i*13)%35),price:90+((i*17)%35)}));
+const HIST_NAMES=["劉備","關羽","張飛","曹操","袁紹","袁術","孫堅","孫策","孫權","董卓","呂布","丁原","何進","皇甫嵩","朱儁","盧植","公孫瓚","陶謙","劉表","劉焉","馬騰","韓遂","張角","張寶","張梁","荀彧","荀攸","郭嘉","程昱","戲志才","夏侯惇","夏侯淵","曹仁","曹洪","典韋","許褚","于禁","樂進","李典","張遼","高順","陳宮","賈詡","李儒","華雄","顏良","文醜","田豐","沮授","審配","麴義","趙雲","太史慈","周瑜","魯肅","張昭","程普","黃蓋","韓當","祖茂","甘寧","黃忠","魏延","蔡瑁","蒯越","龐統","諸葛亮","諸葛瑾","徐庶","司馬徽","華佗","張仲景","孔融","王允","貂蟬","蔡邕","蔡琰","陳登","張繡","劉虞"];
+const COGNOMEN={"劉備":"玄德","關羽":"雲長","張飛":"翼德","曹操":"孟德","袁紹":"本初","孫堅":"文臺","呂布":"奉先","諸葛亮":"孔明","趙雲":"子龍","周瑜":"公瑾","郭嘉":"奉孝","荀彧":"文若","賈詡":"文和"};
+let state=null;
+
+function rng(n){return Math.floor(Math.random()*n)}
+function lsGet(k,fallback=""){try{let v=localStorage.getItem(k);return v===null?fallback:v}catch(e){return fallback}}
+function lsSet(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
+function peopleSeed(){
+ return HIST_NAMES.map((name,i)=>({id:"h"+i,name,zi:COGNOMEN[name]||"",age:16+((i*7)%34),city:i%CITIES.length,
+ stats:{lead:55+((i*13)%40),war:45+((i*17)%51),int:50+((i*19)%47),pol:45+((i*23)%50),cha:50+((i*29)%46)},
+ relation:{affection:0,trust:0,respect:0,debt:0,hatred:0,love:0},known:i<5?1:0,alive:true,faction:null,traits:[]}));
+}
+function freshState(p){
+ return {version:VERSION,saveVersion:SAVE_VERSION,mode:"normal",date:{y:184,m:3,d:1},player:p,
+ city:p.city,people:peopleSeed(),money:300,health:100,stamina:100,fame:0,historyDeviation:0,
+ faction:null,rank:"平民",journal:[],messages:[],tasks:[],flags:{yellowTurban:false},turn:0,theme:lsGet("sg_theme","paper")};
+}
+function openCreate(){
+ modal(`<div class="title">建立人物</div><div class="formgrid">
+ <label>姓名<input id="cname" value="賴峻毅"></label><label>字<input id="czi" placeholder="可留白"></label>
+ <label>性別<select id="csex"><option>男</option><option>女</option></select></label>
+ <label>年齡<input id="cage" type="number" min="16" max="40" value="20"></label>
+ <label>出生／開局地<select id="ccity">${CITIES.map(c=>`<option value="${c.id}">${c.region}・${c.name}</option>`).join("")}</select></label>
+ <label>出身<select id="cbg"><option>寒門</option><option>農家</option><option>商家</option><option>士族</option><option>武人之家</option><option>官宦之家</option><option>遊俠</option><option>醫家</option></select></label>
+ <label class="full">性格<select id="cperson"><option>沉著重義</option><option>豪爽果決</option><option>謹慎務實</option><option>仁厚守信</option><option>野心勃勃</option><option>淡泊自由</option></select></label>
+ </div><p class="small">v0.1採背景式能力生成；自由配點與問卷生成已保留後續擴充位置。</p>
+ <div class="toolbar"><button class="primary" onclick="createChar()">進入中平元年</button><button onclick="saveTemplate()">保存人物模板</button><button onclick="loadTemplate()">載入模板</button><button onclick="closeModal()">取消</button></div>`);
+}
+function charFormData(){return {name:val("cname"),zi:val("czi"),sex:val("csex"),age:+val("cage"),city:+val("ccity"),background:val("cbg"),personality:val("cperson")}}
+function createChar(){
+ let p=charFormData(); if(!p.name)return alert("請輸入姓名");
+ let b={lead:58,war:58,int:58,pol:58,cha:58}, bg=p.background;
+ if(bg==="武人之家"){b.war+=12;b.lead+=7} if(bg==="官宦之家"){b.pol+=12;b.cha+=6} if(bg==="士族"){b.int+=12;b.pol+=7}
+ if(bg==="商家"){b.cha+=9;b.pol+=6} if(bg==="遊俠"){b.war+=10;b.cha+=5} if(bg==="醫家"){b.int+=10;b.cha+=4} if(bg==="農家"){b.war+=5;b.lead+=4}
+ p.stats=b;p.potential={lead:80+rng(21),war:80+rng(21),int:80+rng(21),pol:80+rng(21),cha:80+rng(21)};p.skills={武藝:1,學問:1,交涉:1};p.exp={};
+ state=freshState(p); addJournal(`中平元年三月，你以${p.age}歲之齡，身在${CITIES[p.city].name}。亂世的人生由此開始。`); closeModal();enterGame(); renderCity();
+}
+function saveTemplate(){let p=charFormData();let arr=JSON.parse(lsGet("sg_templates","[]"));arr.push(p);lsSet("sg_templates",JSON.stringify(arr));alert("人物模板已保存。")}
+function loadTemplate(){let a=JSON.parse(lsGet("sg_templates","[]"));if(!a.length)return alert("尚無模板");let p=a[a.length-1];["cname","czi","csex","cage","ccity","cbg","cperson"].forEach((id,i)=>document.getElementById(id).value=[p.name,p.zi,p.sex,p.age,p.city,p.background,p.personality][i]);}
+function enterGame(){show("game");document.body.dataset.theme=state.theme==="dark"?"dark":"";refreshSide()}
+function renderCity(){
+ let c=CITIES[state.city], tension=state.date.y===184?"黃巾之亂的消息在道路與酒肆間流傳，官府的盤查也比往常嚴格。":"天下局勢仍在變化。";
+ scene(c.name,`${c.region}｜治安 ${c.order}｜繁榮 ${c.prosperity}`,`你身在${c.name}。${tension}\n商旅、士人、兵卒與百姓各自奔走，沒有人知道數年後的天下會變成什麼模樣。`,[
+ ["前往酒肆",tavern],["前往市集",market],["修練",train],["打聽消息",rumor],["拜訪人物",showPeople],["官府／仕官",government],["地圖／旅行",showMap],["休息三日",()=>{advance(3,"你暫且休息，整理思緒與體力。");state.stamina=Math.min(100,state.stamina+25);renderCity()}]
+ ]);
+}
+function tavern(){advance(1);let pool=state.people.filter(p=>p.alive&&p.city===state.city);let p=pool[rng(Math.max(1,pool.length))];let text=pool.length?`酒肆中人聲嘈雜。你注意到一名${p.age}歲上下的人物——${p.known?p.name:"陌生旅人"}。`:"今日酒肆沒有特別引人注目的人。";scene("酒肆","消息與人脈的交會處",text,[["主動攀談",()=>meet(p)],["聽鄰桌談話",rumor],["請眾人喝酒（30錢）",()=>{if(pay(30)){state.fame++;advance(1);note("你在酒肆頗為豪爽，略有耳聞。");renderCity()}}],["尋找委託",generateTask],["觀察四周",()=>{advance(1);rumor()}],["返回",renderCity]])}
+function meet(p){if(!p)return renderCity();p.known=Math.max(p.known,2);p.relation.affection+=2+rng(4);p.relation.trust+=rng(3);advance(1);scene("人物相識",p.zi?`${p.name}，字${p.zi}`:p.name,`${p.name}與你交談片刻。從言談中，你只能初步判斷此人的氣質與見識；真正能力仍需長期接觸。`,[["談論天下",()=>{p.relation.respect+=state.player.stats.int>65?3:1;advance(1);renderCity()}],["談論兵法",()=>{p.relation.respect+=state.player.stats.lead>65?3:1;advance(1);renderCity()}],["詢問近況",()=>{p.relation.trust+=2;advance(1);renderCity()}],["贈送薄禮（50）",()=>{if(pay(50)){p.relation.affection+=4;advance(1);renderCity()}}],["告辭",renderCity]])}
+function market(){let c=CITIES[state.city];scene("市集",`目前糧價指數 ${c.price}`,`市集貨物來往。戰亂與收成會逐漸改變各地價格。\n你目前有 ${state.money} 錢。`,[["做短工（+40錢／2日）",()=>{state.money+=40;advance(2,"你在市集做了兩日短工。");renderCity()}],["購買旅糧（30錢）",()=>{if(pay(30)){note("你補充了旅途所需。");renderCity()}}],["觀察物價",()=>{advance(1);renderCity()}],["打聽商路",rumor],["返回",renderCity]])}
+function train(){scene("修練","能力越高，成長越困難。","你準備花七日專心修練。選擇方向：",[["統率",()=>grow("lead")],["武力",()=>grow("war")],["智力",()=>grow("int")],["政治",()=>grow("pol")],["魅力",()=>grow("cha")],["取消",renderCity]])}
+function grow(k){advance(7);let s=state.player.stats[k],pot=state.player.potential[k],chance=Math.max(8,75-s*.55);if(s<100&&s<pot&&Math.random()*100<chance){state.player.stats[k]++;note(`七日修練有所領悟，${label(k)}提升至 ${state.player.stats[k]}。`)}else note("你勤練七日，雖有所體會，能力尚未突破。");renderCity()}
+function rumor(){advance(1);let r=["黃巾軍在數地活動頻繁，但傳聞中的兵力數字彼此矛盾。","有人說朝廷正在調集兵馬，也有人說地方官府已難以控制局面。","北來商旅聲稱道路不靖，部分商隊開始改道。","酒客談到一名年輕豪傑正在招募鄉勇；消息來源並不可靠。","數名旅人都提到洛陽近日政局緊張，說法雖不同，方向卻頗為一致。"][rng(5)];note("傳聞："+r);scene("市井傳聞","可信度需自行判斷",r,[["繼續查證",rumor],["記下消息",()=>{addJournal("聽聞："+r);renderCity()}],["返回",renderCity]])}
+function government(){scene("官府",state.faction?`目前身分：${state.rank}`:"尚未仕官",state.faction?"你已進入地方官府體系，v0.1可接受基礎差事並累積名聲。":"亂世之中，官府正在徵募能辦事之人。",[["應募地方差役",()=>{if(!state.faction){state.faction="地方官府";state.rank="佐吏";state.fame+=3;addJournal(`你在${CITIES[state.city].name}應募入官府，成為佐吏。`)}advance(3);renderCity()}],["接受剿匪差事",banditBattle],["詢問政務",()=>{advance(1);note("你對本地民情與治安多了一些了解。");renderCity()}],["返回",renderCity]])}
+function banditBattle(){let power=state.player.stats.war+state.player.stats.lead+rng(40),enemy=115+rng(45);advance(5);if(power>=enemy){state.fame+=5;state.money+=100;addJournal(`你參與${CITIES[state.city].name}附近的剿匪行動並取得勝利。`);note("剿匪成功，獲得100錢與名聲。")}else{state.health-=10+rng(16);note("剿匪失利，你在混戰中受傷。");addJournal("一次剿匪行動失利，你帶傷返回。")}renderCity()}
+function generateTask(){let t={id:Date.now(),title:"護送商旅",due:serialDate()+10,city:state.city,reward:120};state.tasks.push(t);note("一名商人請你護送貨物，期限十日，報酬120錢。");renderCity()}
+function showMap(){let c=CITIES[state.city];modal(`<div class="title">天下地圖／旅行</div><p>目前：${c.region}・${c.name}</p><div class="actions">${CITIES.map(x=>`<button onclick="travel(${x.id})">${x.region}・${x.name}</button>`).join("")}</div><div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+function travel(id){if(id===state.city)return closeModal();let dist=3+Math.abs(id-state.city)%12;advance(dist);state.city=id;state.player.city=id;if(Math.random()<.25)note("旅途中遇到盤查與流民，你比預計稍感疲憊。");state.stamina=Math.max(20,state.stamina-dist);closeModal();renderCity()}
+function showPeople(){let known=state.people.filter(p=>p.known);modal(`<div class="title">人物情報</div><p class="small">正常模式只顯示你合理掌握的資訊。</p>${known.map(p=>`<div class="msg"><b>${p.name}${p.zi?"・字"+p.zi:""}</b>　${p.age}歲<br>所在：${p.known>1?CITIES[p.city].name:"傳聞不詳"}　能力：${p.known>2?`統${p.stats.lead} 武${p.stats.war} 智${p.stats.int}`:"尚難判斷"}<br>關係：好感 ${p.relation.affection}／信任 ${p.relation.trust}／敬佩 ${p.relation.respect}</div>`).join("")||"尚未真正認識任何人物。"}<div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+function showIntel(){modal(`<div class="title">情報</div><p>歷史偏離度：${state.historyDeviation}%</p><p>目前你掌握的世界資訊主要來自親身經歷與傳聞。相似說法越多且來源越獨立，可信度越高；但群體傳聞仍可能同源而錯誤。</p><div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+function showTasks(){modal(`<div class="title">任務／待辦</div>${state.tasks.map(t=>`<div class="msg"><b>${t.title}</b>｜${CITIES[t.city].name}｜報酬${t.reward}錢</div>`).join("")||"目前沒有未完成任務。"}<div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+function showJournal(){modal(`<div class="title">人物日誌</div>${state.journal.slice().reverse().map(x=>`<div class="msg">${x}</div>`).join("")}<div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+function showFaction(){modal(`<div class="title">勢力／身分</div><p>所屬：${state.faction||"無"}</p><p>身分：${state.rank}</p><p>名聲：${state.fame}</p><p class="small">v0.1已建立勢力資料接口；派系、完整官職、外交與大規模戰爭將逐版深化。</p><div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+function advance(days,txt){for(let i=0;i<days;i++){state.date.d++;state.turn++;if(state.date.d>30){state.date.d=1;state.date.m++;monthlyWorld()}if(state.date.m>12){state.date.m=1;state.date.y++;state.player.age++;state.people.forEach(p=>p.age++)}}if(txt)note(txt);historicalCheck();refreshSide();autoSave()}
+function monthlyWorld(){
+ state.people.forEach(p=>{
+  if(!p.alive)return;
+  if(Math.random()<.15)p.city=(p.city+rng(5)+28)%30;
+  if(Math.random()<.08){
+   let k=["lead","war","int","pol","cha"][rng(5)];
+   p.stats[k]=Math.min(100,(p.stats[k]||60)+1);
+  }
+ });
+ CITIES.forEach(c=>{c.price=Math.max(60,Math.min(180,c.price-5+rng(11)))});
+}
+function historicalCheck(){if(!state.flags.yellowTurban && state.date.y===184 && state.date.m>=4){state.flags.yellowTurban=true;state.historyDeviation=Math.max(state.historyDeviation,2);note("【天下大事】黃巾之亂愈演愈烈，各地開始大規模徵兵。");addJournal("黃巾之亂席捲各地，天下正式進入動盪。")}}
+function quickSave(){if(!state)return;let slots=getSlots();slots[0]={name:"快速存檔",time:new Date().toLocaleString(),data:state};lsSet("sg_slots",JSON.stringify(slots));note("已快速存檔。");refreshSide()}
+function autoSave(){if(!state||state.turn%5)return;lsSet("sg_auto",JSON.stringify(state))}
+function continueGame(){let slots=getSlots();let s=slots.find(Boolean);if(s){state=migrate(s.data);enterGame();renderCity()}else{let a=lsGet("sg_auto","");if(a){state=migrate(JSON.parse(a));enterGame();renderCity()}else alert("目前沒有存檔。")}}
+function getSlots(){let a=JSON.parse(lsGet("sg_slots","[]"));while(a.length<6)a.push(null);return a}
+function openSaves(){let slots=getSlots();modal(`<div class="title">存檔管理</div>${slots.map((s,i)=>`<div class="msg">槽 ${i+1}：${s?`${s.name}｜${s.time}`:"空白"} <button onclick="saveSlot(${i})">儲存</button> ${s?`<button onclick="loadSlot(${i})">讀取</button>`:""}</div>`).join("")}<hr><div class="title">文字備份碼</div><textarea id="backup" rows="7" style="width:100%" placeholder="產生備份碼，或將備份碼貼到這裡"></textarea><div class="toolbar"><button onclick="exportCode()">產生備份碼</button><button onclick="importCode()">從文字恢復</button><button onclick="closeModal()">關閉</button></div>`)}
+function saveSlot(i){if(!state)return alert("目前沒有進行中的人生");let a=getSlots();let name=prompt("存檔名稱",`存檔 ${i+1}`)||`存檔 ${i+1}`;a[i]={name,time:new Date().toLocaleString(),data:state};lsSet("sg_slots",JSON.stringify(a));openSaves()}
+function loadSlot(i){let s=getSlots()[i];if(!s)return;state=migrate(s.data);closeModal();enterGame();renderCity()}
+function exportCode(){if(!state)return alert("目前沒有遊戲可備份");let json=JSON.stringify({format:"SG3K",saveVersion:SAVE_VERSION,data:state});let bytes=new TextEncoder().encode(json);let bin="";bytes.forEach(b=>bin+=String.fromCharCode(b));document.getElementById("backup").value="SG3K-V01-"+btoa(bin)}
+function importCode(){try{let x=document.getElementById("backup").value.trim().replace(/^SG3K-V01-/,"");let bin=atob(x),bytes=Uint8Array.from(bin,c=>c.charCodeAt(0)),obj=JSON.parse(new TextDecoder().decode(bytes));state=migrate(obj.data);closeModal();enterGame();renderCity();quickSave()}catch(e){alert("備份碼無法辨識或已損壞。")}}
+function migrate(s){if(!s.saveVersion)s.saveVersion=1;s.version=VERSION;return s}
+function observerStart(){state=freshState({name:"觀察者",zi:"",sex:"",age:0,city:0,background:"",personality:"",stats:{lead:0,war:0,int:0,pol:0,cha:0},potential:{}});state.mode="observer";enterGame();scene("觀察者模式","世界將自行運作","你目前不扮演任何人物。可快速推演世界，之後再附身人物。",[["推演30日",()=>{advance(30);observerStartScene()}],["推演180日",()=>{advance(180);observerStartScene()}],["推演一年",()=>{advance(360);observerStartScene()}],["附身人物",observerPossess],["返回首頁",goHome]])}
+function observerStartScene(){scene("觀察者模式",dateText(),"世界持續運作。主要人物會移動與成長，城市價格也在變化。",[["推演30日",()=>{advance(30);observerStartScene()}],["推演180日",()=>{advance(180);observerStartScene()}],["推演一年",()=>{advance(360);observerStartScene()}],["附身人物",observerPossess],["返回首頁",goHome]])}
+function observerPossess(){modal(`<div class="title">選擇附身人物</div>${state.people.slice(0,30).map(p=>`<button style="margin:3px" onclick="possess('${p.id}')">${p.name}</button>`).join("")}<div class="toolbar"><button onclick="closeModal()">取消</button></div>`)}
+function possess(id){let p=state.people.find(x=>x.id===id);state.player={name:p.name,zi:p.zi,sex:"",age:p.age,city:p.city,background:"史實人物",personality:"",stats:{...p.stats},potential:{lead:100,war:100,int:100,pol:100,cha:100},skills:{},exp:{}};state.city=p.city;state.mode="normal";closeModal();addJournal(`你在${dateText()}開始以${p.name}的身分行動。`);renderCity()}
+function showChangelog(){modal(`<div class="title">更新紀錄</div><b>v0.1.1 Alpha</b><p>建立184年開局、30城資料、80名史實人物資料池、創角與模板、時間與旅行、修練、傳聞、人物情報、多維關係底層、基礎任務/仕官/戰鬥、觀察者模式、多槽存檔、自動存檔、文字備份碼與Migration基礎。</p><p class="small">這是第一個可持續擴充版本；完整216條藍圖會逐版實裝。</p><div class="toolbar"><button onclick="closeModal()">關閉</button></div>`)}
+function refreshSide(){if(!state)return;document.getElementById("dateTop").textContent=dateText()+"｜"+CITIES[state.city].name;let p=state.player;document.getElementById("playerStats").innerHTML=`<div><b>${p.name}</b>${p.zi?"・字"+p.zi:""}</div><div class="small">${p.age?p.age+"歲｜":""}${state.rank}</div><div class="stat"><span>金錢</span><b>${state.money}</b></div><div class="stat"><span>名聲</span><b>${state.fame}</b></div><div class="stat"><span>體力</span><b>${state.stamina}</b></div><div class="stat"><span>健康</span><b>${state.health}</b></div>`;document.getElementById("abilities").innerHTML=Object.entries(p.stats||{}).map(([k,v])=>`<div class="stat"><span>${label(k)}</span><b>${v}</b></div>`).join("");document.getElementById("messages").innerHTML=state.messages.slice(-8).reverse().map(x=>`<div class="msg">${x}</div>`).join("")}
+function scene(t,m,n,a){document.getElementById("sceneTitle").textContent=t;document.getElementById("sceneMeta").textContent=m||"";document.getElementById("narrative").textContent=n;document.getElementById("actions").innerHTML="";a.forEach(([x,f])=>{let b=document.createElement("button");b.textContent=x;b.onclick=f;document.getElementById("actions").appendChild(b)});refreshSide()}
+function note(x){state.messages.push(`${dateText()}｜${x}`);if(state.messages.length>100)state.messages.shift()}
+function addJournal(x){state.journal.push(`${dateText()}｜${x}`)}
+function pay(n){if(state.money<n){alert("金錢不足。");return false}state.money-=n;return true}
+function dateText(){return `${era(state.date.y)} ${state.date.m}月${state.date.d}日`}
+function era(y){return y===184?"中平元年":`公元${y}年`}
+function serialDate(){return state.date.y*360+state.date.m*30+state.date.d}
+function label(k){return {lead:"統率",war:"武力",int:"智力",pol:"政治",cha:"魅力"}[k]||k}
+function val(id){return document.getElementById(id).value}
+function modal(x){document.getElementById("modalBox").innerHTML=x;document.getElementById("modal").classList.add("show")}
+function closeModal(){document.getElementById("modal").classList.remove("show")}
+function show(id){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active")}
+function goHome(){show("home")}
+function toggleTheme(){if(!state)return;state.theme=state.theme==="dark"?"paper":"dark";document.body.dataset.theme=state.theme==="dark"?"dark":"";lsSet("sg_theme",state.theme)}
+
+function bootCheck(){
+ let el=document.getElementById("compat"); if(!el)return;
+ let js=true, storage=false;
+ try{localStorage.setItem("__sg_test","1");storage=localStorage.getItem("__sg_test")==="1";localStorage.removeItem("__sg_test")}catch(e){}
+ let proto=location.protocol;
+ let msg="✓ JavaScript 可執行";
+ if(storage) msg+="　✓ 瀏覽器存檔可用";
+ else msg+="　⚠ 此開啟方式無法使用瀏覽器永久存檔，請使用「文字備份碼」";
+ if(proto==="file:") msg+="<br>目前為本機 HTML。Safari/Chrome 若正常顯示此行，即可開始遊玩。";
+ el.innerHTML=msg;
+}
+window.addEventListener("DOMContentLoaded",bootCheck);
+
+</script>
+</body></html>

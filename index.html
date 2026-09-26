@@ -35,7 +35,7 @@ button,input,select,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-
    <button onclick="observerStart()">觀察者模式</button>
    <button onclick="showChangelog()">更新紀錄</button>
   </div>
-  <p class="small">v0.1.6.5 Alpha：地圖系統重建版｜從穩定的 v0.1.6.2 重新建立旅行地圖，不沿用 6.4 系列地圖補丁。</p>
+  <p class="small">v0.1.6.5.1 Alpha：地圖75%版｜只縮小整個地圖互動容器至75%，底圖、城市、道路與點擊區同步等比例縮放。</p>
   <div id="compat" class="small" style="margin-top:12px;padding:9px;border:1px dashed var(--line);border-radius:8px">正在檢查瀏覽器相容性…</div>
  </div>
 </section>
@@ -55,7 +55,7 @@ button,input,select,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="box" id="modalBox"></div></div>
 
 <script>
-const VERSION="0.1.6.5", SAVE_VERSION=6;
+const VERSION="0.1.6.5.1", SAVE_VERSION=6;
 const CITIES=[
 ["洛陽","司隸"],["長安","司隸"],["陳留","兗州"],["濮陽","兗州"],["許昌","豫州"],["汝南","豫州"],["譙","豫州"],["鄴","冀州"],["南皮","冀州"],["平原","青州"],["北海","青州"],["薊","幽州"],["遼東","幽州"],["晉陽","并州"],["上黨","并州"],["宛","荊州"],["襄陽","荊州"],["江陵","荊州"],["長沙","荊州"],["壽春","揚州"],["建業","揚州"],["吳","揚州"],["會稽","揚州"],["柴桑","揚州"],["成都","益州"],["漢中","益州"],["梓潼","益州"],["江州","益州"],["武威","涼州"],["天水","涼州"]
 ].map((x,i)=>({id:i,name:x[0],region:x[1],prosperity:55+((i*7)%31),order:50+((i*11)%36),food:60+((i*13)%35),price:90+((i*17)%35)}));
@@ -516,7 +516,7 @@ migrate=function(s){state=s;ensureV15();let o=state;state=null;return o};
 function ensureV16(){
   if(!state)return;
   ensureV15();
-  state.version="0.1.6.5"; state.saveVersion=6;
+  state.version="0.1.6.5.1"; state.saveVersion=6;
   state.mode=state.mode||"normal";
   state.skillPractice=state.skillPractice||{};
   state.medicalHistory=state.medicalHistory||[];
@@ -894,14 +894,14 @@ document.addEventListener("DOMContentLoaded",()=>{
 <script id="v0162-version-fix">
 document.addEventListener("DOMContentLoaded",()=>{
   const p=[...document.querySelectorAll("#home .small")].find(x=>x.textContent.includes("v0.1."));
-  if(p) p.textContent="v0.1.6.5 Alpha：地圖系統重建版｜從穩定的 v0.1.6.2 重新建立旅行地圖，不沿用 6.4 系列地圖補丁。";
+  if(p) p.textContent="v0.1.6.5.1 Alpha：地圖75%版｜只縮小整個地圖互動容器至75%，底圖、城市、道路與點擊區同步等比例縮放。";
 });
 </script>
 
 
 <style id="v0165-map-css">
 #modalBox.map-rebuild-box{width:min(96vw,1500px);max-width:min(96vw,1500px)}
-.map65-wrap{position:relative;width:100%;aspect-ratio:3/2;margin:10px auto;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#d9c69d}
+.map65-wrap{position:relative;width:75%;aspect-ratio:3/2;margin:10px auto;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#d9c69d}
 .map65-img,.map65-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .map65-img{object-fit:contain}
 .map65-svg{z-index:2}

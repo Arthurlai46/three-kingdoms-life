@@ -35,7 +35,7 @@ button,input,select,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-
    <button onclick="observerStart()">觀察者模式</button>
    <button onclick="showChangelog()">更新紀錄</button>
   </div>
-  <p class="small">v0.1.6.4.1 Alpha：地圖旅行修正版｜修正地圖／旅行無反應；補齊路徑計算，保留單一原創互動地圖。</p>
+  <p class="small">v0.1.6.4.2 Alpha：核心修復版｜補回遺失的 v0.1.5 初始化核心，修正地圖／旅行按鈕無反應；保留單一原創互動地圖。</p>
   <div id="compat" class="small" style="margin-top:12px;padding:9px;border:1px dashed var(--line);border-radius:8px">正在檢查瀏覽器相容性…</div>
  </div>
 </section>
@@ -55,7 +55,7 @@ button,input,select,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="box" id="modalBox"></div></div>
 
 <script>
-const VERSION="0.1.6.4.1", SAVE_VERSION=6;
+const VERSION="0.1.6.4.2", SAVE_VERSION=6;
 const CITIES=[
 ["洛陽","司隸"],["長安","司隸"],["陳留","兗州"],["濮陽","兗州"],["許昌","豫州"],["汝南","豫州"],["譙","豫州"],["鄴","冀州"],["南皮","冀州"],["平原","青州"],["北海","青州"],["薊","幽州"],["遼東","幽州"],["晉陽","并州"],["上黨","并州"],["宛","荊州"],["襄陽","荊州"],["江陵","荊州"],["長沙","荊州"],["壽春","揚州"],["建業","揚州"],["吳","揚州"],["會稽","揚州"],["柴桑","揚州"],["成都","益州"],["漢中","益州"],["梓潼","益州"],["江州","益州"],["武威","涼州"],["天水","涼州"]
 ].map((x,i)=>({id:i,name:x[0],region:x[1],prosperity:55+((i*7)%31),order:50+((i*11)%36),food:60+((i*13)%35),price:90+((i*17)%35)}));
@@ -406,12 +406,39 @@ migrate=function(s){state=s;ensureV15();let o=state;state=null;return o};
 .v16-skillbar{height:8px;background:#d7c8a7;border-radius:999px;overflow:hidden;margin-top:4px}
 .v16-skillbar>i{display:block;height:100%;background:currentColor;opacity:.55}
 </style>
+
+<script id="v01642-missing-v15-core">
+/* Critical compatibility layer.
+   v0.1.5 gameplay functions existed in the file, but ensureV15() itself was missing.
+   Any v0.1.6 map action called ensureV16()->ensureV15() and died immediately. */
+function ensureV15(){
+  if(!state)return;
+  ensureV14();
+  state.version=VERSION;
+  state.saveVersion=6;
+  state.marketResearch=state.marketResearch||{};
+  state.reliefHistory=state.reliefHistory||{};
+  state.govKnowledge=state.govKnowledge||{};
+  state.routeIntel=state.routeIntel||{};
+  state.discoveredStations=state.discoveredStations||{};
+  state.bounties=state.bounties||[];
+  state.travelContext=state.travelContext||null;
+  state.roadEnemy=state.roadEnemy||null;
+  state.identity=state.identity||inferIdentity();
+  state.retinue=state.retinue||{count:0,loyalty:50,morale:60,equipment:0};
+  if(state.retinue.count===undefined)state.retinue.count=0;
+  if(state.retinue.loyalty===undefined)state.retinue.loyalty=50;
+  if(state.retinue.morale===undefined)state.retinue.morale=60;
+  if(state.retinue.equipment===undefined)state.retinue.equipment=0;
+}
+</script>
+
 <script id="v016-patch">
 /* ===== v0.1.6 Alpha：地圖與核心玩法修正版 ===== */
 function ensureV16(){
   if(!state)return;
   ensureV15();
-  state.version="0.1.6.4.1"; state.saveVersion=6;
+  state.version="0.1.6.4.2"; state.saveVersion=6;
   state.mode=state.mode||"normal";
   state.skillPractice=state.skillPractice||{};
   state.medicalHistory=state.medicalHistory||[];

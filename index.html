@@ -35,7 +35,7 @@ button,input,select,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-
    <button onclick="observerStart()">觀察者模式</button>
    <button onclick="showChangelog()">更新紀錄</button>
   </div>
-  <p class="small">v0.1.6.4 Alpha：互動天下山河圖｜原創地圖直接承載30城點擊、道路、路線高亮與旅行功能；移除雙地圖顯示。</p>
+  <p class="small">v0.1.6.4.1 Alpha：地圖旅行修正版｜修正地圖／旅行無反應；補齊路徑計算，保留單一原創互動地圖。</p>
   <div id="compat" class="small" style="margin-top:12px;padding:9px;border:1px dashed var(--line);border-radius:8px">正在檢查瀏覽器相容性…</div>
  </div>
 </section>
@@ -55,7 +55,7 @@ button,input,select,textarea{font:inherit}.app{max-width:1180px;margin:auto;min-
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="box" id="modalBox"></div></div>
 
 <script>
-const VERSION="0.1.6.4", SAVE_VERSION=6;
+const VERSION="0.1.6.4.1", SAVE_VERSION=6;
 const CITIES=[
 ["洛陽","司隸"],["長安","司隸"],["陳留","兗州"],["濮陽","兗州"],["許昌","豫州"],["汝南","豫州"],["譙","豫州"],["鄴","冀州"],["南皮","冀州"],["平原","青州"],["北海","青州"],["薊","幽州"],["遼東","幽州"],["晉陽","并州"],["上黨","并州"],["宛","荊州"],["襄陽","荊州"],["江陵","荊州"],["長沙","荊州"],["壽春","揚州"],["建業","揚州"],["吳","揚州"],["會稽","揚州"],["柴桑","揚州"],["成都","益州"],["漢中","益州"],["梓潼","益州"],["江州","益州"],["武威","涼州"],["天水","涼州"]
 ].map((x,i)=>({id:i,name:x[0],region:x[1],prosperity:55+((i*7)%31),order:50+((i*11)%36),food:60+((i*13)%35),price:90+((i*17)%35)}));
@@ -411,7 +411,7 @@ migrate=function(s){state=s;ensureV15();let o=state;state=null;return o};
 function ensureV16(){
   if(!state)return;
   ensureV15();
-  state.version="0.1.6.4"; state.saveVersion=6;
+  state.version="0.1.6.4.1"; state.saveVersion=6;
   state.mode=state.mode||"normal";
   state.skillPractice=state.skillPractice||{};
   state.medicalHistory=state.medicalHistory||[];
@@ -874,6 +874,47 @@ showMap=function(){
 };
 
 
+</script>
+
+
+<script id="v01641-travel-root-fix">
+/* v0.1.6.4.1 root fix:
+   v0.1.5+ travel/startTravel and v0.1.6.4 map selection call shortestPath(),
+   but the base file only defined shortest(). This made travel/map actions fail at runtime. */
+function shortestPath(from,to){
+  const n=CITIES.length;
+  const dist=Array(n).fill(Infinity), prev=Array(n).fill(-1), used=Array(n).fill(false);
+  dist[from]=0;
+  for(let step=0;step<n;step++){
+    let u=-1,best=Infinity;
+    for(let i=0;i<n;i++) if(!used[i] && dist[i]<best){best=dist[i];u=i}
+    if(u<0) break;
+    if(u===to) break;
+    used[u]=true;
+    ROADS.forEach(([a,b,w])=>{
+      let v=-1;
+      if(a===u)v=b; else if(b===u)v=a;
+      if(v>=0 && !used[v] && dist[v]>dist[u]+w){
+        dist[v]=dist[u]+w; prev[v]=u;
+      }
+    });
+  }
+  if(!isFinite(dist[to])) return {days:12,path:[from,to]};
+  const path=[]; let cur=to, guard=0;
+  while(cur>=0 && guard++<n+2){path.push(cur); if(cur===from)break; cur=prev[cur]}
+  path.reverse();
+  if(path[0]!==from) return {days:dist[to],path:[from,to]};
+  return {days:dist[to],path};
+}
+
+/* Make the main button use the final map function at click-time, not an older captured reference. */
+document.addEventListener("DOMContentLoaded",()=>{
+  document.querySelectorAll("button").forEach(b=>{
+    if((b.textContent||"").trim()==="地圖／旅行"){
+      b.setAttribute("onclick","showMap()");
+    }
+  });
+});
 </script>
 
 </body></html>
